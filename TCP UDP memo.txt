@@ -1,0 +1,90 @@
+통신방식의 차이:
+	TCP:
+		3hand shake를 통해 1:1 통신.
+		서버 혹은 클라이언트가 연결을 종료한 경우 다른 쪽 연결도 종료.
+		
+	UDP:
+		ACK 없이 데이터 전송.
+		엄밀히 따지면 연결된 상태가 아님. (서버 혹은 클라이언트 한 쪽이 종료해도 다른 쪽은 연결이 종료되지 않음)
+		
+Winsock2 함수 호출 순서
+서버:
+	공통:
+		0. 순서
+			1. WSAStartup()
+			2. getaddrinfo()
+			3. socket()
+			4. bind()
+			5. freeaddrinfo()
+			TCP 1. listen()
+			TCP 2. accept()
+			6. recv()/recvfrom(), send()/sendto()
+			TCP 3. shutdown()
+			7. closesocket()
+			8. WSACleanup()
+			
+		1. WSADATA 변수를 선언, WSAStartup 함수를 호출하여 winsock 라이브러리 초기화.
+			첫번째 인자는 버전, 두번째 인자는 값을 받을 WSADATA 변수.
+		
+		2. addrinfo 변수를 선언후 getaddrinfo를 호출하여 로컬 주소를 획득
+			addrinfo 멤버:
+			ai_family : IP프로토콜(AF_INET = IPv4)
+			ai_socktype : 소켓 타입(TCP: SOCK_STREAM, UDP: SOCK_DGRAM)
+			ai_protocol : 프로토콜 종류 (TCP: IPPROTO_TCP, UDP: IPPROTO_UDP)
+			ai_flags : 플래그
+			getaddrinfo함수의 첫번째 인자는 도메인 주소 혹은 IP, 두번째 인자는 포트, 세번째 인자는 addrinfo 입력변수, 네번째 인자는 리턴받을 addrinfo 변수.
+			
+		3. socket 함수에 리턴받은 addrinfo 변수의 ai_family, ai_socktype, ai_protocol값을 매개변수로 전달.
+			이 함수를 호출해서 소켓을 생성
+		
+		4. bind 함수를 호출하여 포트번호 할당
+			첫번째 인자에 소켓, 두번째 인자에 ad_addr, 세번째 인자에 ai_addrlen
+			
+		5. freeaddrinfo를 호출해서 addrinfo 리소스 해제
+		
+	TCP:
+		3 hand shake 과정
+		6-1. listen 함수를 호출해서 클라이언트의 접속을 기다림.
+			첫번째 인자는 소켓, 두번째 인자는 연결가능한 개수.
+			
+		6-2. accept 함수를 호출해서 클라이언트의 소켓을 획득
+		
+		6-3. recv와 send 함수를 이용해서 통신.
+		
+		6-4. shutdown 함수를 호출해서 통신 종료.
+	UDP:
+		6-1. recvfrom 함수를 통해 임의의 클라이언트로부터 수신 후 클라이언트의 주소 저장, sendto로 클라이언트에게 eco 가능
+		
+	공통:
+		7. closesocket, WSAClearup 함수로 소켓 객체 반납.
+		
+클라이언트:
+	공통:
+		0. 순서
+			1. WSAStartup()
+			2. getaddrinfo()
+			3. socket()
+			4. accept()
+			5. freeaddrinfo()
+			6. recv(), send()
+			TCP 1. shutdown()
+			TCP 2. recv()
+			7. closesocket()
+			8. WSACleanup()
+		1~3. 서버 부분의 소켓 생성까지 동일
+		
+		4. connect 함수를 호출하여 서버에 연결
+			첫번째 인자에 소켓, 두번째 인자에 ad_addr, 세번째 인자에 ai_addrlen
+			
+		5. 서버의 5.와 동일
+		
+		6. recv/send 함수로 데이터 송수신
+		
+	TCP:
+		7-1. shutdown 함수를 호출해서 통신 종료 요청.
+		
+		7-2 recv 함수로 서버가 연결을 종료할 때 까지 데이터 수신.
+	
+	공통:
+		8. closesocket, WSAClearup 함수로 소켓 객체 반납.
+		
